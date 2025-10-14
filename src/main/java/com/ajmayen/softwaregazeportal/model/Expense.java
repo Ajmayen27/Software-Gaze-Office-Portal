@@ -17,7 +17,7 @@ public class Expense {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String billType;
-    private String amount;
+    private Double amount;
     private String comment;
     private LocalDate date;
 }
