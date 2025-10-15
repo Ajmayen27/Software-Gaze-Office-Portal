@@ -3,16 +3,19 @@ package com.ajmayen.softwaregazeportal.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
-@Component
+@Service
 public class JwtUtil {
 
     private String SECRET_KEY = "secret";
@@ -24,6 +27,12 @@ public class JwtUtil {
 
     public Date extractExpiration(String token) {
         return extractClaim(token,Claims::getExpiration);
+    }
+
+
+    public List<String> extractRoles(String token) {
+        final Claims claims = extractAllClaims(token);
+        return (List<String>) claims.get("role");
     }
 
 
@@ -42,6 +51,10 @@ public class JwtUtil {
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        claims.put("role", roles);
         return createToken(claims,userDetails.getUsername());
     }
 
