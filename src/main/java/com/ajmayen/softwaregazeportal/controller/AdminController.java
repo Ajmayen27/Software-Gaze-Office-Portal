@@ -6,10 +6,10 @@ import com.ajmayen.softwaregazeportal.model.Expense;
 import com.ajmayen.softwaregazeportal.model.User;
 import com.ajmayen.softwaregazeportal.repository.ExpenseRepository;
 import com.ajmayen.softwaregazeportal.repository.UserRepository;
+import com.ajmayen.softwaregazeportal.service.MyUserDetailsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -22,15 +22,23 @@ public class AdminController {
 
     private final ExpenseRepository expenseRepository;
 
-    public AdminController(UserRepository userRepository, ExpenseRepository expenseRepository) {
+    private final MyUserDetailsService  myUserDetailsService;
+
+    public AdminController(UserRepository userRepository, ExpenseRepository expenseRepository, MyUserDetailsService myUserDetailsService) {
         this.userRepository = userRepository;
         this.expenseRepository = expenseRepository;
+        this.myUserDetailsService = myUserDetailsService;
     }
 
 
     @GetMapping("/employees")
     public List<User> getEmployees() {
         return userRepository.findAll();
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<?> updateUser(@RequestBody User user,@PathVariable Long id) {
+        return ResponseEntity.ok(myUserDetailsService.updateUser(user,id));
     }
 
 

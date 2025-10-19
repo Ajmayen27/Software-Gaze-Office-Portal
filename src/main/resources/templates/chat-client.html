@@ -1,160 +1,266 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <title>STOMP Chat Tester (JWT Supported)</title>
-    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <title>Software Gaze - Chat Client</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 40px auto;
-            background: #f9fafc;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        input, button {
-            margin: 5px 0;
-            padding: 10px;
-            width: 100%;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-        #messages {
-            background: white;
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 250px;
-            overflow-y: auto;
-            border-radius: 8px;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f9; }
+        .container { max-width: 900px; margin: auto; background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; height: 80vh; }
+        .sidebar { width: 250px; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; }
+        .main-chat { flex-grow: 1; display: flex; flex-direction: column; }
+        #connection-form { padding: 20px; border-bottom: 1px solid #e0e0e0; display: flex; flex-direction: column; gap: 10px; }
+        #connection-form input, #connection-form textarea { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; width: -webkit-fill-available; }
+        #connection-form button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background-color 0.2s; }
+        #connect { background-color: #28a745; color: white; }
+        #disconnect { background-color: #dc3545; color: white; }
+        #connect:hover { background-color: #218838; }
+        #disconnect:hover { background-color: #c82333; }
+        #status { text-align: center; font-size: 12px; color: #666; padding: 5px 0; }
+
+        #contacts-list { list-style-type: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
+        #contacts-list li { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+        #contacts-list li:hover { background-color: #f7f7f7; }
+        #contacts-list li.active { background-color: #007bff; color: white; font-weight: bold; }
+
+        #chat-window { flex-grow: 1; padding: 20px; overflow-y: auto; border-bottom: 1px solid #e0e0e0; background-color: #f9f9f9; }
+        .message-area { display: flex; flex-direction: column; gap: 12px; }
+        .message { padding: 10px 15px; border-radius: 18px; max-width: 70%; line-height: 1.4; }
+        .message.sent { background-color: #007bff; color: white; align-self: flex-end; }
+        .message.received { background-color: #e9e9eb; color: #333; align-self: flex-start; }
+        .message-sender { font-weight: bold; font-size: 12px; margin-bottom: 4px; }
+        .message-content { font-size: 14px; }
+        .event-message { text-align: center; color: #888; font-size: 12px; width: 100%; }
+
+        #message-form { display: flex; padding: 20px; }
+        #message-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-right: 10px; }
+        #send-button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
-<h2>🧪 STOMP Chat Tester (JWT)</h2>
 
-<label>WebSocket URL:</label>
-<input id="wsUrl" value="ws://localhost:8081/ws" />
-
-<label>Username:</label>
-<input id="username" value="user_one" />
-
-<!-- 🔐 Added field for JWT token -->
-<label>JWT Token (paste your Bearer token here):</label>
-<input id="jwtToken" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." />
-
-<button id="connectBtn">Connect</button>
-<button id="disconnectBtn" disabled>Disconnect</button>
-
-<h3>Status: <span id="status">Not connected</span></h3>
-
-<div id="messages"></div>
-
-<h3>Send Message</h3>
-<label>Receiver (optional for private):</label>
-<input id="receiver" placeholder="user_two (leave blank for public)" />
-
-<label>Message Content:</label>
-<input id="messageContent" placeholder="Type a message..." />
-
-<button id="sendBtn" disabled>Send</button>
+<div class="container">
+    <div class="sidebar">
+        <div id="connection-form">
+            <input type="text" id="username" placeholder="Enter your username" />
+            <textarea id="jwt-token" placeholder="Paste JWT Token here..." rows="4"></textarea>
+            <button id="connect" onclick="connect()">Connect</button>
+            <button id="disconnect" onclick="disconnect()" disabled>Disconnect</button>
+            <div id="status">Disconnected</div>
+        </div>
+        <ul id="contacts-list">
+            <!-- Contacts will be populated here -->
+        </ul>
+    </div>
+    <div class="main-chat">
+        <div id="chat-window">
+            <div class="message-area" id="message-area">
+                <!-- Messages will appear here -->
+            </div>
+        </div>
+        <form id="message-form" name="messageForm" onsubmit="sendMessage(event)">
+            <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" disabled/>
+            <button id="send-button" type="submit" disabled>Send</button>
+        </form>
+    </div>
+</div>
 
 <script>
-    let client;
-    const wsUrl = document.getElementById('wsUrl');
-    const username = document.getElementById('username');
-    const jwtToken = document.getElementById('jwtToken'); // 🔐
-    const receiver = document.getElementById('receiver');
-    const messageContent = document.getElementById('messageContent');
-    const status = document.getElementById('status');
-    const messages = document.getElementById('messages');
+    let stompClient = null;
+    let username = null;
+    let jwtToken = null;
+    let activeChat = 'public'; // 'public' or a specific username
 
-    const log = (msg, type = 'info') => {
-        const p = document.createElement('p');
-        p.textContent = msg;
-        if (type === 'recv') p.style.color = 'green';
-        if (type === 'error') p.style.color = 'red';
-        messages.appendChild(p);
-        messages.scrollTop = messages.scrollHeight;
-    };
+    const connectButton = document.getElementById('connect');
+    const disconnectButton = document.getElementById('disconnect');
+    const statusDiv = document.getElementById('status');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const usernameInput = document.getElementById('username');
+    const jwtInput = document.getElementById('jwt-token');
+    const contactsList = document.getElementById('contacts-list');
+    const messageArea = document.getElementById('message-area');
+    const chatWindow = document.getElementById('chat-window');
 
-    document.getElementById('connectBtn').onclick = () => {
-        const token = jwtToken.value.trim();
+    function connect() {
+        username = usernameInput.value.trim();
+        jwtToken = jwtInput.value.trim();
 
-        if (!token) {
-            alert("Please enter a JWT token first.");
-            return;
-        }
+        if (username && jwtToken) {
+            // Pass headers to the connect function
+            const headers = {
+                Authorization: `Bearer ${jwtToken}`
+            };
 
-        client = new StompJs.Client({
-            brokerURL: wsUrl.value,
-            reconnectDelay: 5000,
-            connectHeaders: {
-                Authorization: "Bearer " + token // 🔐 Add JWT to headers
-            },
-            onConnect: (frame) => {
-                status.textContent = "Connected as " + username.value;
-                log("Connected ✅");
-                client.subscribe("/topic/public", (msg) => log("[Public] " + msg.body, 'recv'));
-                client.subscribe("/user/" + username.value + "/queue/messages", (msg) => log("[Private] " + msg.body, 'recv'));
+            const socket = new SockJS('http://localhost:8081/ws');
+            stompClient = Stomp.over(socket);
 
-                // Announce user joined
-                client.publish({
-                    destination: "/app/chat.addUser",
-                    body: JSON.stringify({ sender: username.value, type: "JOIN" })
-                });
-
-                document.getElementById('sendBtn').disabled = false;
-                document.getElementById('disconnectBtn').disabled = false;
-            },
-            onStompError: (frame) => log("STOMP Error: " + frame.headers['message'], 'error'),
-            onWebSocketError: (event) => log("WebSocket Error: " + event, 'error')
-        });
-
-        client.activate();
-    };
-
-    document.getElementById('disconnectBtn').onclick = () => {
-        client.deactivate();
-        status.textContent = "Disconnected";
-        document.getElementById('sendBtn').disabled = true;
-        document.getElementById('disconnectBtn').disabled = true;
-    };
-
-    document.getElementById('sendBtn').onclick = () => {
-        const content = messageContent.value;
-        const recv = receiver.value.trim();
-
-        if (!content) return alert("Please type a message!");
-
-        if (recv) {
-            // Private message
-            client.publish({
-                destination: "/app/chat.sendPrivateMessage",
-                body: JSON.stringify({
-                    sender: username.value,
-                    receiver: recv,
-                    content: content,
-                    type: "CHAT"
-                })
-            });
-            log("[You -> " + recv + "]: " + content);
+            // Stomp.js uses the third argument for headers
+            stompClient.connect(headers, onConnected, onError);
         } else {
-            // Public message
-            client.publish({
-                destination: "/app/chat.sendMessage",
-                body: JSON.stringify({
-                    sender: username.value,
-                    content: content,
-                    type: "CHAT"
-                })
-            });
-            log("[You -> Public]: " + content);
+            alert('Please enter a username and JWT Token.');
+        }
+    }
+
+    function onConnected() {
+        // Update UI
+        statusDiv.textContent = `Connected as ${username}`;
+        connectButton.disabled = true;
+        disconnectButton.disabled = false;
+        usernameInput.disabled = true;
+        jwtInput.disabled = true;
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+
+        // Subscribe to the Public Topic
+        stompClient.subscribe('/topic/public', onMessageReceived);
+
+        // Subscribe to the Private Queue
+        stompClient.subscribe(`/user/${username}/queue/messages`, onMessageReceived);
+
+        // Tell server we're online
+        stompClient.send("/app/chat.addUser",
+            {}, // No headers needed for sending messages after connection
+            JSON.stringify({sender: username, type: 'JOIN'})
+        );
+
+        // Add Group Chat to contacts
+        updateContactsList();
+    }
+
+    function onError(error) {
+        let errorMessage = 'Could not connect to WebSocket server. Please refresh and try again!';
+        if (error.headers && error.headers.message) {
+            errorMessage = error.headers.message;
+        }
+        statusDiv.textContent = errorMessage;
+        statusDiv.style.color = 'red';
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            // Can optionally send a LEAVE message
+            stompClient.send("/app/chat.addUser",
+                {},
+                JSON.stringify({sender: username, type: 'LEAVE'})
+            );
+            stompClient.disconnect();
         }
 
-        messageContent.value = "";
-    };
+        // Reset UI
+        statusDiv.textContent = 'Disconnected';
+        connectButton.disabled = false;
+        disconnectButton.disabled = true;
+        usernameInput.disabled = false;
+        jwtInput.disabled = false;
+        messageInput.disabled = true;
+        sendButton.disabled = true;
+        contactsList.innerHTML = '';
+        console.log("Disconnected");
+    }
+
+    function sendMessage(event) {
+        event.preventDefault();
+        const messageContent = messageInput.value.trim();
+
+        if (messageContent && stompClient) {
+            const chatMessage = {
+                sender: username,
+                content: messageContent,
+                type: 'CHAT'
+            };
+
+            if (activeChat === 'public') {
+                stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+            } else {
+                chatMessage.receiver = activeChat;
+                stompClient.send("/app/chat.sendPrivateMessage", {}, JSON.stringify(chatMessage));
+                // Display sent private message for sender
+                displayMessage(chatMessage, true);
+            }
+            messageInput.value = '';
+        }
+    }
+
+    function onMessageReceived(payload) {
+        const message = JSON.parse(payload.body);
+
+        if (message.type === 'JOIN' || message.type === 'LEAVE') {
+            displayEventMessage(message);
+            // In a real app, you would fetch the user list here
+        } else {
+            // A regular chat message
+            const isSentByMe = message.sender === username;
+            // Don't display my own private messages twice (they are handled by sendMessage)
+            if(message.receiver && isSentByMe) return;
+
+            displayMessage(message, isSentByMe);
+        }
+    }
+
+    function displayMessage(message, isSent) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        messageElement.classList.add(isSent ? 'sent' : 'received');
+
+        const senderElement = document.createElement('div');
+        senderElement.classList.add('message-sender');
+        // Show sender for received messages, or receiver for sent private messages
+        if (!isSent) {
+            senderElement.textContent = message.sender;
+        } else if (message.receiver) {
+            senderElement.textContent = `To: ${message.receiver}`;
+        }
+
+        const contentElement = document.createElement('div');
+        contentElement.classList.add('message-content');
+        contentElement.textContent = message.content;
+
+        if (senderElement.textContent) {
+            messageElement.appendChild(senderElement);
+        }
+        messageElement.appendChild(contentElement);
+
+        messageArea.appendChild(messageElement);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function displayEventMessage(message) {
+        const eventElement = document.createElement('div');
+        eventElement.classList.add('event-message');
+        eventElement.textContent = `${message.sender} ${message.type.toLowerCase()}ed the chat!`;
+        messageArea.appendChild(eventElement);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function updateContactsList() {
+        // This is a simplified version. In a real app, you'd get this from an API.
+        contactsList.innerHTML = '';
+        const groupChat = document.createElement('li');
+        groupChat.textContent = 'Group Chat';
+        groupChat.onclick = () => switchChat('public');
+        if (activeChat === 'public') groupChat.classList.add('active');
+        contactsList.appendChild(groupChat);
+
+        // Dummy users for testing. Replace with API call.
+        ['user_one', 'user_two', 'test_admin'].filter(u => u !== username).forEach(user => {
+            const userElement = document.createElement('li');
+            userElement.textContent = user;
+            userElement.onclick = () => switchChat(user);
+            if (activeChat === user) userElement.classList.add('active');
+            contactsList.appendChild(userElement);
+        });
+    }
+
+    function switchChat(target) {
+        activeChat = target;
+        updateContactsList();
+        messageArea.innerHTML = ''; // Clear chat window on switch
+        document.getElementById('message-input').placeholder = `Message ${target}...`;
+    }
+
 </script>
+
 </body>
 </html>
+

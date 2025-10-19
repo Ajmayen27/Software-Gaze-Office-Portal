@@ -2,13 +2,20 @@ package com.ajmayen.softwaregazeportal.model;
 
 import lombok.Data;
 
+import java.awt.*;
 import java.time.LocalDateTime;
 
 @Data
 public class ChatMessage {
 
-    private String from;
-    private String to;
-    private String text;
-    private LocalDateTime timestamp;
+    private MessageType messageType;
+    private String content;
+    private String sender;
+    private String receiver;
+
+    public enum MessageType {
+        CHAT,
+        JOIN,
+        LEAVE
+    }
 }

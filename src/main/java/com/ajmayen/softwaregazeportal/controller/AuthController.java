@@ -3,6 +3,7 @@ package com.ajmayen.softwaregazeportal.controller;
 
 import com.ajmayen.softwaregazeportal.model.User;
 import com.ajmayen.softwaregazeportal.repository.UserRepository;
+import com.ajmayen.softwaregazeportal.service.MyUserDetailsService;
 import com.ajmayen.softwaregazeportal.util.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,12 +30,15 @@ public class AuthController {
 
     private final PasswordEncoder passwordEncoder;
 
+
+
     public AuthController(AuthenticationManager authenticationManager, UserDetailsService userDetailsService, UserRepository userRepository, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
+
     }
 
 
@@ -61,4 +65,8 @@ public class AuthController {
         final String jwt = jwtUtil.generateToken(userDetails);
         return ResponseEntity.ok( new AuthenticationResponse(jwt));
     }
+
+
+
+
 }
