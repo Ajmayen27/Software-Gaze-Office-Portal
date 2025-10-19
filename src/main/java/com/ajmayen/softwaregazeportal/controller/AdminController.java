@@ -67,5 +67,5 @@ public class AdminController {
                 .filter(e -> e.getDate().getYear() == java.time.LocalDate.now().getYear())
                 .mapToDouble(Expense::getAmount)
                 .sum();
-    }
+     }
 }

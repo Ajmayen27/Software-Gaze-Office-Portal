@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>STOMP Chat Tester (JWT Supported)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            background: #f9fafc;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input, button {
+            margin: 5px 0;
+            padding: 10px;
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        #messages {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 250px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<h2>🧪 STOMP Chat Tester (JWT)</h2>
+
+<label>WebSocket URL:</label>
+<input id="wsUrl" value="ws://localhost:8081/ws" />
+
+<label>Username:</label>
+<input id="username" value="user_one" />
+
+<!-- 🔐 Added field for JWT token -->
+<label>JWT Token (paste your Bearer token here):</label>
+<input id="jwtToken" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." />
+
+<button id="connectBtn">Connect</button>
+<button id="disconnectBtn" disabled>Disconnect</button>
+
+<h3>Status: <span id="status">Not connected</span></h3>
+
+<div id="messages"></div>
+
+<h3>Send Message</h3>
+<label>Receiver (optional for private):</label>
+<input id="receiver" placeholder="user_two (leave blank for public)" />
+
+<label>Message Content:</label>
+<input id="messageContent" placeholder="Type a message..." />
+
+<button id="sendBtn" disabled>Send</button>
+
+<script>
+    let client;
+    const wsUrl = document.getElementById('wsUrl');
+    const username = document.getElementById('username');
+    const jwtToken = document.getElementById('jwtToken'); // 🔐
+    const receiver = document.getElementById('receiver');
+    const messageContent = document.getElementById('messageContent');
+    const status = document.getElementById('status');
+    const messages = document.getElementById('messages');
+
+    const log = (msg, type = 'info') => {
+        const p = document.createElement('p');
+        p.textContent = msg;
+        if (type === 'recv') p.style.color = 'green';
+        if (type === 'error') p.style.color = 'red';
+        messages.appendChild(p);
+        messages.scrollTop = messages.scrollHeight;
+    };
+
+    document.getElementById('connectBtn').onclick = () => {
+        const token = jwtToken.value.trim();
+
+        if (!token) {
+            alert("Please enter a JWT token first.");
+            return;
+        }
+
+        client = new StompJs.Client({
+            brokerURL: wsUrl.value,
+            reconnectDelay: 5000,
+            connectHeaders: {
+                Authorization: "Bearer " + token // 🔐 Add JWT to headers
+            },
+            onConnect: (frame) => {
+                status.textContent = "Connected as " + username.value;
+                log("Connected ✅");
+                client.subscribe("/topic/public", (msg) => log("[Public] " + msg.body, 'recv'));
+                client.subscribe("/user/" + username.value + "/queue/messages", (msg) => log("[Private] " + msg.body, 'recv'));
+
+                // Announce user joined
+                client.publish({
+                    destination: "/app/chat.addUser",
+                    body: JSON.stringify({ sender: username.value, type: "JOIN" })
+                });
+
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = false;
+            },
+            onStompError: (frame) => log("STOMP Error: " + frame.headers['message'], 'error'),
+            onWebSocketError: (event) => log("WebSocket Error: " + event, 'error')
+        });
+
+        client.activate();
+    };
+
+    document.getElementById('disconnectBtn').onclick = () => {
+        client.deactivate();
+        status.textContent = "Disconnected";
+        document.getElementById('sendBtn').disabled = true;
+        document.getElementById('disconnectBtn').disabled = true;
+    };
+
+    document.getElementById('sendBtn').onclick = () => {
+        const content = messageContent.value;
+        const recv = receiver.value.trim();
+
+        if (!content) return alert("Please type a message!");
+
+        if (recv) {
+            // Private message
+            client.publish({
+                destination: "/app/chat.sendPrivateMessage",
+                body: JSON.stringify({
+                    sender: username.value,
+                    receiver: recv,
+                    content: content,
+                    type: "CHAT"
+                })
+            });
+            log("[You -> " + recv + "]: " + content);
+        } else {
+            // Public message
+            client.publish({
+                destination: "/app/chat.sendMessage",
+                body: JSON.stringify({
+                    sender: username.value,
+                    content: content,
+                    type: "CHAT"
+                })
+            });
+            log("[You -> Public]: " + content);
+        }
+
+        messageContent.value = "";
+    };
+</script>
+</body>
+</html>
