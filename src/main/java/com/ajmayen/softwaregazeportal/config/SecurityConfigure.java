@@ -51,6 +51,24 @@ public class SecurityConfigure {
         return http.build();
     }
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // **THIS IS THE FIX**: Allow your new frontend origin
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8082"));
+        // Allow common HTTP methods
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // Allow all necessary headers
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Allow credentials
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // Apply this configuration to all paths
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
 
 
     @Bean
