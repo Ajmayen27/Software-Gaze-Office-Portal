@@ -16,8 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -42,7 +42,7 @@ public class AuthController {
     }
 
 
-    @PostMapping("/signup")
+    @PostMapping("/auth/signup")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
@@ -50,7 +50,7 @@ public class AuthController {
     }
 
 
-    @PostMapping("/signin")
+    @PostMapping("/auth/signin")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody User user) throws AuthenticationException {
         try {
             authenticationManager.authenticate(
@@ -65,8 +65,5 @@ public class AuthController {
         final String jwt = jwtUtil.generateToken(userDetails);
         return ResponseEntity.ok( new AuthenticationResponse(jwt));
     }
-
-
-
 
 }

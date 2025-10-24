@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.util.Arrays;
 
@@ -37,35 +38,38 @@ public class SecurityConfigure {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf ->csrf.disable())
+        http
+                .cors(cors ->cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf ->csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**","/h2-console/**","/ws/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/api/users*").hasAnyRole("ADMIN","USER")
                         .anyRequest().authenticated()
                 )
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
+                        .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
-        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // **THIS IS THE FIX**: Allow your new frontend origin
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8082"));
-        // Allow common HTTP methods
+
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        // Allow all necessary headers
+
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        // Allow credentials
+
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // Apply this configuration to all paths
-        source.registerCorsConfiguration("/**", configuration);
+
+        source.registerCorsConfiguration("/api/**", configuration);
         return source;
     }
 

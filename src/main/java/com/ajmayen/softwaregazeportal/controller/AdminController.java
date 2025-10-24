@@ -8,13 +8,15 @@ import com.ajmayen.softwaregazeportal.repository.ExpenseRepository;
 import com.ajmayen.softwaregazeportal.repository.UserRepository;
 import com.ajmayen.softwaregazeportal.service.MyUserDetailsService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("api/admin")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
 
