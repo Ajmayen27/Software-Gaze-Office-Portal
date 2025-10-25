@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/admin")
+@RequestMapping("/api/admin")
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
@@ -59,6 +59,12 @@ public class AdminController {
     @GetMapping("/expenses")
     public List<Expense> getAllExpenses(){
         return expenseRepository.findAll();
+    }
+
+    @DeleteMapping("/expense/delete/{id}")
+    public ResponseEntity<?> deleteExpense(@PathVariable Long id){
+        expenseRepository.deleteById(id);
+        return ResponseEntity.ok("Expense has been deleted successfully");
     }
 
 
