@@ -61,6 +61,12 @@ public class AdminController {
         return expenseRepository.findAll();
     }
 
+
+    @PutMapping("/expense/update/{id}")
+    public ResponseEntity<?> updateExpense(@RequestBody Expense expense,@PathVariable Long id){
+        return ResponseEntity.ok(myUserDetailsService.updateExpense(expense,id));
+    }
+
     @DeleteMapping("/expense/delete/{id}")
     public ResponseEntity<?> deleteExpense(@PathVariable Long id){
         expenseRepository.deleteById(id);

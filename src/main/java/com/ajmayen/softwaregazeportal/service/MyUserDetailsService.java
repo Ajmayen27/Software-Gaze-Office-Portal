@@ -1,6 +1,8 @@
 package com.ajmayen.softwaregazeportal.service;
 
+import com.ajmayen.softwaregazeportal.model.Expense;
 import com.ajmayen.softwaregazeportal.model.User;
+import com.ajmayen.softwaregazeportal.repository.ExpenseRepository;
 import com.ajmayen.softwaregazeportal.repository.UserRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,9 +22,11 @@ public class MyUserDetailsService implements UserDetailsService {
 
 
     private final UserRepository userRepository;
-    public MyUserDetailsService(UserRepository userRepository) {
+    private final ExpenseRepository expenseRepository;
+    public MyUserDetailsService(UserRepository userRepository, ExpenseRepository expenseRepository) {
         this.userRepository = userRepository;
 
+        this.expenseRepository = expenseRepository;
     }
 
     @Override
@@ -44,6 +48,16 @@ public class MyUserDetailsService implements UserDetailsService {
         users.setDesignation(user.getDesignation());
         users.setEmail(user.getEmail());
         return userRepository.save(users);
+    }
+
+
+    public Expense updateExpense(Expense expense,Long id) {
+        Expense expense1 = expenseRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + id));
+        expense1.setBillType(expense.getBillType());
+        expense1.setDate(expense.getDate());
+        expense1.setAmount(expense.getAmount());
+        expense1.setComment(expense.getComment());
+        return expenseRepository.save(expense1);
     }
 
     public PasswordEncoder encoder() {
