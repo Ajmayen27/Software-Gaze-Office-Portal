@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "attendance")
@@ -27,10 +28,10 @@ public class Attendance {
     private User admin;
 
     @Column(name ="punch_in",nullable = false)
-    private LocalDate punchIn;
+    private LocalDateTime punchIn;
 
     @Column(name = "punch_out")
-    private LocalDate punchOut;
+    private LocalDateTime punchOut;
 
 
     @Column(name = "date",nullable = false)

@@ -4,6 +4,7 @@ import com.ajmayen.softwaregazeportal.model.Attendance;
 import com.ajmayen.softwaregazeportal.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 

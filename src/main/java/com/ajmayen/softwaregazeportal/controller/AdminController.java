@@ -6,12 +6,16 @@ import com.ajmayen.softwaregazeportal.model.Expense;
 import com.ajmayen.softwaregazeportal.model.User;
 import com.ajmayen.softwaregazeportal.repository.ExpenseRepository;
 import com.ajmayen.softwaregazeportal.repository.UserRepository;
+import com.ajmayen.softwaregazeportal.service.AttendanceService;
 import com.ajmayen.softwaregazeportal.service.MyUserDetailsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -26,10 +30,13 @@ public class AdminController {
 
     private final MyUserDetailsService  myUserDetailsService;
 
-    public AdminController(UserRepository userRepository, ExpenseRepository expenseRepository, MyUserDetailsService myUserDetailsService) {
+    private final AttendanceService  attendanceService;
+
+    public AdminController(UserRepository userRepository, ExpenseRepository expenseRepository, MyUserDetailsService myUserDetailsService, AttendanceService attendanceService) {
         this.userRepository = userRepository;
         this.expenseRepository = expenseRepository;
         this.myUserDetailsService = myUserDetailsService;
+        this.attendanceService = attendanceService;
     }
 
 
@@ -89,5 +96,45 @@ public class AdminController {
                 .filter(e -> e.getDate().getYear() == java.time.LocalDate.now().getYear())
                 .mapToDouble(Expense::getAmount)
                 .sum();
-     }
+    }
+
+
+
+    @PostMapping("/add/attendance")
+    public Map<String, String> addAttendance(@RequestBody Map<String, Object> body, Authentication authentication) {
+        String adminUsername = authentication.getName();
+        String employeeUsername = body.get("employeeUsername").toString();
+        String comment = body.get("comment") != null ? body.get("comment").toString() : null;
+
+        LocalDateTime punchIn = LocalDateTime.parse(body.get("punchIn").toString());
+        LocalDateTime punchOut = body.get("punchOut") != null
+                ? LocalDateTime.parse(body.get("punchOut").toString()) : null;
+
+        String message = attendanceService.addAttendance(employeeUsername, punchIn, punchOut, comment, adminUsername);
+        return Map.of("message", message);
+    }
+
+
+    @GetMapping("/attendance/summary")
+    public List<Map<String, Object>> getAllSummary(@RequestParam int month, @RequestParam int year) {
+        return attendanceService.getAttendanceSummaryAll(month, year);
+    }
+
+
+    @GetMapping("/attendance/summary/{username}")
+    public Map<String, Object> getIndividualSummary(@PathVariable String username,
+                                                    @RequestParam int month,
+                                                    @RequestParam int year) {
+        return attendanceService.getIndividualAttendance(username, month, year);
+    }
+
+
+
+
+
+
+
+
+
+
 }
