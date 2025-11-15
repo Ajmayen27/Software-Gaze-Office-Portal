@@ -93,19 +93,19 @@ public class AttendanceService {
         List<Map<String, Object>> attendanceList = attendances.stream()
                 .map(a -> {
                     Map<String, Object> map = new HashMap<>();
-                    map.put("date", a.getDate());
-                    map.put("punchIn", a.getPunchIn());
-                    map.put("punchOut", a.getPunchOut());
-                    map.put("comment", a.getComment());
+                    map.put("date :", a.getDate());
+                    map.put("punchIn :", a.getPunchIn());
+                    map.put("punchOut :", a.getPunchOut());
+                    map.put("comment :", a.getComment());
                     return map;
                 })
                 .collect(Collectors.toList());
 
         Map<String, Object> result = new HashMap<>();
-        result.put("employeeUsername", employeeUsername);
-        result.put("month", month);
-        result.put("year", year);
-        result.put("attendances", attendanceList);
+        result.put("employeeUsername :", employeeUsername);
+        result.put("month :", month);
+        result.put("year :", year);
+        result.put("attendances :", attendanceList);
 
         return result;
     }
