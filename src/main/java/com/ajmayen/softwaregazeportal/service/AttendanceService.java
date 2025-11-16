@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -81,32 +82,42 @@ public class AttendanceService {
 
 
     public Map<String, Object> getIndividualAttendance(String employeeUsername, int month, int year) {
+
         User employee = userRepository.findByUsername(employeeUsername)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         YearMonth ym = YearMonth.of(year, month);
         LocalDateTime start = ym.atDay(1).atStartOfDay();
-        LocalDateTime end = ym.atEndOfMonth().atTime(23,59);
+        LocalDateTime end = ym.atEndOfMonth().atTime(23, 59);
 
-        List<Attendance> attendances = attendanceRepository.findAllByEmployeeAndPunchInBetween(employee, start, end);
+        List<Attendance> attendances = attendanceRepository
+                .findAllByEmployeeAndPunchInBetween(employee, start, end);
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
         List<Map<String, Object>> attendanceList = attendances.stream()
                 .map(a -> {
                     Map<String, Object> map = new HashMap<>();
-                    map.put("date :", a.getDate());
-                    map.put("punchIn :", a.getPunchIn());
-                    map.put("punchOut :", a.getPunchOut());
-                    map.put("comment :", a.getComment());
+
+                    // Extract only the day from LocalDate
+                    int day = a.getDate().getDayOfMonth();
+                    map.put("day", day);
+
+                    // Show only TIME from punchIn & punchOut
+                    map.put("punchIn", a.getPunchIn() != null ? a.getPunchIn().format(timeFormatter) : null);
+                    map.put("punchOut", a.getPunchOut() != null ? a.getPunchOut().format(timeFormatter) : null);
+
                     return map;
                 })
                 .collect(Collectors.toList());
 
         Map<String, Object> result = new HashMap<>();
-        result.put("employeeUsername :", employeeUsername);
-        result.put("month :", month);
-        result.put("year :", year);
-        result.put("attendances :", attendanceList);
+        result.put("year", year);
+        result.put("month", month);
+        result.put("employee", employeeUsername);
+        result.put("attendances", attendanceList);
 
         return result;
     }
+
 }
