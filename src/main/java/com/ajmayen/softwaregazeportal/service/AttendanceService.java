@@ -109,6 +109,7 @@ public class AttendanceService {
                     // Show only TIME from punchIn & punchOut
                     map.put("punchIn", a.getPunchIn() != null ? a.getPunchIn().format(timeFormatter) : null);
                     map.put("punchOut", a.getPunchOut() != null ? a.getPunchOut().format(timeFormatter) : null);
+                    map.put("comment", a.getComment());
 
                     return map;
                 })
