@@ -60,6 +60,8 @@ public class MyUserDetailsService implements UserDetailsService {
         return expenseRepository.save(expense1);
     }
 
+
+
     public PasswordEncoder encoder() {
         return new BCryptPasswordEncoder();
     }
