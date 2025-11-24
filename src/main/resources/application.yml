@@ -7,10 +7,11 @@ spring:
     name: SoftwareGaze-Portal
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/softwaregazeDb
-    driver-class-name: org.postgresql.Driver
-    username: postgres
-    password: 16260
+    url: ${DATASOURCE_URL}
+    username: ${DATASOURCE_USER}
+    password: ${DATASOURCE_PASSWORD}
+    driver-class-name: ${DATASOURCE_DRIVER}
+
   jpa:
     database-platform:  org.hibernate.dialect.PostgreSQLDialect
     hibernate:
