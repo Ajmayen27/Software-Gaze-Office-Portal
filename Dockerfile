@@ -11,6 +11,9 @@ COPY gradle ./gradle
 COPY gradlew ./
 COPY gradlew.bat ./
 
+# Fix critical error: make gradlew executable
+RUN chmod +x gradlew
+
 # Pre-download dependencies
 RUN ./gradlew dependencies --no-daemon || true
 
