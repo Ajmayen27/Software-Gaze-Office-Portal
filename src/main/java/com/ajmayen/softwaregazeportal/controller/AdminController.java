@@ -8,6 +8,7 @@ import com.ajmayen.softwaregazeportal.repository.ExpenseRepository;
 import com.ajmayen.softwaregazeportal.repository.UserRepository;
 import com.ajmayen.softwaregazeportal.service.AttendanceService;
 import com.ajmayen.softwaregazeportal.service.MyUserDetailsService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,7 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
+
 
 
     private final UserRepository userRepository;
