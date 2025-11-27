@@ -2,6 +2,7 @@ package com.ajmayen.softwaregazeportal.config;
 
 import com.ajmayen.softwaregazeportal.service.MyUserDetailsService;
 import com.ajmayen.softwaregazeportal.util.JwtRequestFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,6 +32,9 @@ public class SecurityConfigure {
     private final MyUserDetailsService myUserDetailsService;
 
     private final JwtRequestFilter jwtRequestFilter;
+
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     public SecurityConfigure(MyUserDetailsService myUserDetailsService, JwtRequestFilter jwtRequestFilter) {
         this.myUserDetailsService = myUserDetailsService;
@@ -63,7 +67,7 @@ public class SecurityConfigure {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+        configuration.setAllowedOrigins(Arrays.asList(frontendUrl));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 

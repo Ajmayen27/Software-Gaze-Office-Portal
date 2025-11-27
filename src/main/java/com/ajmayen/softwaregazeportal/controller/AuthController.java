@@ -17,7 +17,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(
+        origins = {
+                "http://localhost:5173",
+                "https://loquacious-medovik-3d0a45.netlify.app"
+        },
+        allowCredentials = "true"
+)
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
