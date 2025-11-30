@@ -12,18 +12,18 @@ spring:
     password: ${DATASOURCE_PASSWORD}
     driver-class-name: ${DATASOURCE_DRIVER}
 
-frontend:
-  url: ${FRONTEND_URL}
-
   jpa:
-    database-platform:  org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect:  org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+frontend:
+  url: ${FRONTEND_URL}
 
 
 #  h2:

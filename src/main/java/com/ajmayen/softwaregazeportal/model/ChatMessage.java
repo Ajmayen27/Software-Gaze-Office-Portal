@@ -6,7 +6,9 @@ import java.awt.*;
 import java.time.LocalDateTime;
 
 @Data
-public class ChatMessage {
+public class
+
+ChatMessage {
 
     private MessageType messageType;
     private String content;
