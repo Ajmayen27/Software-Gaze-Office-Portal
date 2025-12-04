@@ -1,9 +1,6 @@
 package com.ajmayen.softwaregazeportal.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -19,5 +16,12 @@ public class Expense {
     private String billType;
     private Double amount;
     private String comment;
+    private String tag;
     private LocalDate date;
+
+    @Lob
+    @Column(length = 10000000)
+    private byte[] screenshot;
+
+    private String imageType;
 }
