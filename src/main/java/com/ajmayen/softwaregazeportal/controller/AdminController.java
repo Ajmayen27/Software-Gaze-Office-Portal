@@ -8,12 +8,21 @@ import com.ajmayen.softwaregazeportal.repository.ExpenseRepository;
 import com.ajmayen.softwaregazeportal.repository.UserRepository;
 import com.ajmayen.softwaregazeportal.service.AttendanceService;
 import com.ajmayen.softwaregazeportal.service.MyUserDetailsService;
+import com.ajmayen.softwaregazeportal.service.PdfReportService;
+import com.lowagie.text.Image;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +40,6 @@ import java.util.Map;
 public class AdminController {
 
 
-
     private final UserRepository userRepository;
 
     private final ExpenseRepository expenseRepository;
@@ -40,11 +48,14 @@ public class AdminController {
 
     private final AttendanceService  attendanceService;
 
-    public AdminController(UserRepository userRepository, ExpenseRepository expenseRepository, MyUserDetailsService myUserDetailsService, AttendanceService attendanceService) {
+    private final PdfReportService pdfReportService;
+
+    public AdminController(UserRepository userRepository, ExpenseRepository expenseRepository, MyUserDetailsService myUserDetailsService, AttendanceService attendanceService, PdfReportService pdfReportService) {
         this.userRepository = userRepository;
         this.expenseRepository = expenseRepository;
         this.myUserDetailsService = myUserDetailsService;
         this.attendanceService = attendanceService;
+        this.pdfReportService = pdfReportService;
     }
 
 
@@ -65,10 +76,40 @@ public class AdminController {
          return ResponseEntity.ok("User has been deleted successfully");
     }
 
+
     @PostMapping("/expense")
-    public Expense  addExpense(@RequestBody Expense expense){
+    public Expense addExpense(
+            @RequestPart("expense") Expense expense,
+            @RequestPart(value = "file", required = false) MultipartFile file
+    ) throws IOException {
+
+        if (file != null && !file.isEmpty()) {
+            expense.setScreenshot(file.getBytes());
+            expense.setImageType(file.getContentType());
+        }
         return expenseRepository.save(expense);
     }
+
+
+    @GetMapping("/expenses/report/monthly")
+    public void downloadMonthlyReport(HttpServletResponse response) throws Exception {
+        List<Expense> monthlyExpenses = expenseRepository.findAll().stream()
+                .filter(e -> e.getDate().getMonth() == LocalDate.now().getMonth() &&
+                        e.getDate().getYear() == LocalDate.now().getYear())
+                .toList();
+
+        pdfReportService.exportAsPdf(monthlyExpenses, "Monthly-Expense-Report", response);
+    }
+
+    @GetMapping("/expenses/report/yearly")
+    public void downloadYearlyReport(HttpServletResponse response) throws Exception {
+        List<Expense> yearlyExpenses = expenseRepository.findAll().stream()
+                .filter(e -> e.getDate().getYear() == LocalDate.now().getYear())
+                .toList();
+
+        pdfReportService.exportAsPdf(yearlyExpenses, "Yearly-Expense-Report", response);
+    }
+
 
 
     @GetMapping("/expenses")
@@ -135,13 +176,6 @@ public class AdminController {
                                                     @RequestParam int year) {
         return attendanceService.getIndividualAttendance(username, month, year);
     }
-
-
-
-
-
-
-
 
 
 

@@ -22,6 +22,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import com.lowagie.text.pdf.draw.LineSeparator;
 
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
@@ -69,6 +70,7 @@ public class PdfReportService {
         for (Expense expense : expenses) {
             table.addCell(new PdfPCell(new Phrase(expense.getDate().format(formatter), DATA_FONT)));
             table.addCell(new PdfPCell(new Phrase(expense.getBillType(), DATA_FONT)));
+            table.addCell(new Phrase(expense.getComment(), DATA_FONT));
             table.addCell(new PdfPCell(new Phrase(expense.getTag(), DATA_FONT)));
 
             // Align Cost to Right
@@ -118,7 +120,7 @@ public class PdfReportService {
         // Load Logo (Assuming logo.png is in src/main/resources/static/ or a known path)
         // If you don't have a file yet, comment out the Image lines
         try {
-            Image logo = Image.getInstance("src/main/resources/static/logo.png");
+            Image logo = Image.getInstance("src/main/resources/sgLogo.jpg");
             logo.scaleToFit(100, 50);
             logo.setAlignment(Element.ALIGN_CENTER);
             document.add(logo);
@@ -165,7 +167,8 @@ public class PdfReportService {
         signatureTable.addCell(cell2);
 
         // Add Underlines
-        PdfPCell lineCell = new PdfPCell(new Phrase("__________________________"));
+        PdfPCell lineCell = new PdfPCell(new Phrase("___________________" +
+                "_______"));
         lineCell.setBorder(Rectangle.NO_BORDER);
         lineCell.setPaddingTop(30);
         signatureTable.addCell(lineCell);
@@ -194,13 +197,36 @@ public class PdfReportService {
         img.setBorder(Rectangle.BOX);
         img.setBorderColor(Color.LIGHT_GRAY);
         img.setBorderWidth(1);
+        img.setRotationDegrees(0);
+        img.setAlignment(Image.ALIGN_LEFT);
         document.add(img);
 
         // 3. Divider
         LineSeparator separator = new LineSeparator();
         separator.setLineColor(Color.LIGHT_GRAY);
         document.add(new Chunk(separator));
+
+
+
     }
+
+
+
+    public void exportAsPdf(List<Expense> expenses, String fileName, HttpServletResponse response)
+            throws IOException, DocumentException {
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=" + fileName + ".pdf");
+
+        Document document = new Document(PageSize.A4, 36, 36, 36, 36);
+        PdfWriter.getInstance(document, response.getOutputStream());
+
+        document.open();
+        generateReport(expenses, document);
+        document.close();
+    }
+
 }
 
 
