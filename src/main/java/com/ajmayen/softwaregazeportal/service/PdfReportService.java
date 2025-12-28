@@ -211,7 +211,6 @@ public class PdfReportService {
     }
 
 
-
     public void exportAsPdf(List<Expense> expenses, String fileName, HttpServletResponse response)
             throws IOException, DocumentException {
 
