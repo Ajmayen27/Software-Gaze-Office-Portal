@@ -12,7 +12,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,12 +53,14 @@ public class MyUserDetailsService implements UserDetailsService {
     }
 
 
-    public Expense updateExpense(Expense expense,Long id) {
+    public Expense updateExpense(Expense expense, Long id, MultipartFile file) throws IOException {
         Expense expense1 = expenseRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + id));
         expense1.setBillType(expense.getBillType());
         expense1.setDate(expense.getDate());
         expense1.setAmount(expense.getAmount());
         expense1.setComment(expense.getComment());
+        expense1.setTag(expense.getTag());
+        expense1.setScreenshot(file.getBytes());
         return expenseRepository.save(expense1);
     }
 

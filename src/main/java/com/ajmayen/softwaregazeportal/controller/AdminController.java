@@ -119,8 +119,10 @@ public class AdminController {
 
 
     @PutMapping("/expense/update/{id}")
-    public ResponseEntity<?> updateExpense(@RequestBody Expense expense,@PathVariable Long id){
-        return ResponseEntity.ok(myUserDetailsService.updateExpense(expense,id));
+    public ResponseEntity<?> updateExpense(@RequestPart("expense") Expense expense,
+                                           @RequestPart(value = "file", required = false) MultipartFile file,
+                                           @PathVariable Long id) throws IOException {
+        return ResponseEntity.ok(myUserDetailsService.updateExpense(expense,id,file));
     }
 
     @DeleteMapping("/expense/delete/{id}")
