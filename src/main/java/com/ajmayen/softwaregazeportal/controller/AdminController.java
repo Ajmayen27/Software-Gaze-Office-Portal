@@ -91,16 +91,41 @@ public class AdminController {
     }
 
 
-//    @GetMapping("/expenses/report/monthly")
-//    public void downloadMonthlyReport(HttpServletResponse response) throws Exception {
-//        List<Expense> monthlyExpenses = expenseRepository.findAll().stream()
-//                .filter(e -> e.getDate().getMonth() == LocalDate.now().getMonth() &&
-//                        e.getDate().getYear() == LocalDate.now().getYear())
-//                .toList();
-//
-//        pdfReportService.exportAsPdf(monthlyExpenses, "Monthly-Expense-Report", response);
-//    }
+    @GetMapping("/expenses/report/CurrentMonth")
+    public void downloadMonthlyReport(HttpServletResponse response) throws Exception {
+        List<Expense> monthlyExpenses = expenseRepository.findAll().stream()
+                .filter(e -> e.getDate().getMonth() == LocalDate.now().getMonth() &&
+                        e.getDate().getYear() == LocalDate.now().getYear())
+                .toList();
 
+        pdfReportService.exportAsPdf(monthlyExpenses, "Monthly-Expense-Report", response);
+    }
+
+
+
+
+    @GetMapping("/expenses/report/monthly/tag")
+    public void downloadMonthlyReport(
+            @RequestParam int month,
+            @RequestParam int year,
+            @RequestParam String tag,
+            HttpServletResponse response
+    ) throws Exception {
+
+        List<Expense> monthlyExpenses = expenseRepository.findAll().stream()
+                .filter(e ->
+                        e.getDate().getMonthValue() == month &&
+                                e.getDate().getYear() == year &&
+                                e.getTag().equals(tag)
+                )
+                .toList();
+
+        pdfReportService.exportAsPdf(
+                monthlyExpenses,
+                "Monthly-Expense-Report-" + month + "-" + year,
+                response
+        );
+    }
 
 
     @GetMapping("/expenses/report/monthly")
@@ -122,10 +147,12 @@ public class AdminController {
                 "Monthly-Expense-Report-" + month + "-" + year,
                 response
         );
+
     }
 
 
-    @GetMapping("/expenses/report/yearly")
+
+        @GetMapping("/expenses/report/yearly")
     public void downloadYearlyReport(HttpServletResponse response) throws Exception {
         List<Expense> yearlyExpenses = expenseRepository.findAll().stream()
                 .filter(e -> e.getDate().getYear() == LocalDate.now().getYear())
