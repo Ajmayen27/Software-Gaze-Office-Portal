@@ -28,10 +28,10 @@ public class Attendance {
     @JoinColumn(name = "admin_id",nullable = false)
     private User admin;
 
-    @Column(name ="punch_in",nullable = false)
-    private LocalDateTime punchIn;
+    @Column(name ="punch_in",nullable = true)
+    private  LocalDateTime punchIn;
 
-    @Column(name = "punch_out")
+    @Column(name = "punch_out",nullable = true)
     private LocalDateTime punchOut;
 
 

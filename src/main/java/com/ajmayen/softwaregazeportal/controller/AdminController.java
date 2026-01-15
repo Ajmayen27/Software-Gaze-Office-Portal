@@ -21,11 +21,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -208,13 +210,19 @@ public class AdminController {
         String employeeUsername = body.get("employeeUsername").toString();
         String comment = body.get("comment") != null ? body.get("comment").toString() : null;
 
-        LocalDateTime punchIn = LocalDateTime.parse(body.get("punchIn").toString());
+        LocalDateTime punchIn = body.get("punchIn") != null
+                ? LocalDateTime.parse(body.get("punchIn").toString())
+                : null;
         LocalDateTime punchOut = body.get("punchOut") != null
                 ? LocalDateTime.parse(body.get("punchOut").toString()) : null;
 
-        String message = attendanceService.addAttendance(employeeUsername, punchIn, punchOut, comment, adminUsername);
+        String message = attendanceService.addAttendance(employeeUsername, Optional.ofNullable(punchIn) , Optional.ofNullable(punchOut), comment, adminUsername);
         return Map.of("message", message);
     }
+
+
+
+
 
 
     @GetMapping("/attendance/summary")

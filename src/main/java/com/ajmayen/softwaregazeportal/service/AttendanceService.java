@@ -11,10 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -30,7 +27,7 @@ public class AttendanceService {
     }
 
 
-    public String addAttendance(String employeeUseraname, LocalDateTime punchIn, LocalDateTime punchOut,String comment,String adminUsername) {
+    public String addAttendance(String employeeUseraname, Optional<LocalDateTime> punchIn , Optional<LocalDateTime> punchOut, String comment, String adminUsername) {
 
         User admin = userRepository.findByUsername(adminUsername).orElseThrow(() -> new UsernameNotFoundException("Admin not found"));
 
@@ -41,10 +38,17 @@ public class AttendanceService {
         Attendance attendance = new Attendance();
         attendance.setEmployee(employee);
         attendance.setAdmin(admin);
-        attendance.setPunchIn(punchIn);
-        attendance.setPunchOut(punchOut);
+        attendance.setPunchIn(punchIn.orElse(null));
+        attendance.setPunchOut(punchOut.orElse(null));
         attendance.setComment(comment);
-        attendance.setDate(punchIn.toLocalDate());
+        LocalDate date = punchIn
+                .map(LocalDateTime::toLocalDate)
+                .orElseGet(() ->
+                        punchOut.map(LocalDateTime::toLocalDate)
+                                .orElse(LocalDate.now()) // fallback
+                );
+
+        attendance.setDate(date);;
 
         attendanceRepository.save(attendance);
 
