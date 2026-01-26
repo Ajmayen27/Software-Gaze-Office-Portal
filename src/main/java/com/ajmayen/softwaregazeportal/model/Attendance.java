@@ -9,7 +9,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "attendance")
+@Table(name = "attendance",uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"employee_id", "date"})
+})
 @Data
 public class Attendance {
 
@@ -40,5 +42,13 @@ public class Attendance {
 
 
     private String comment;
+
+
+    private double TotalWorkingHours;
+
+
+    private double OverTime;
+
+
 
 }

@@ -12,4 +12,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     List<Attendance> findAllByPunchInBetween(LocalDateTime start, LocalDateTime end);
     List<Attendance> findAllByEmployeeAndPunchInBetween(User employee, LocalDateTime start, LocalDateTime end);
+    boolean existsByEmployeeAndDate(User employee, LocalDate date);
+
 }
