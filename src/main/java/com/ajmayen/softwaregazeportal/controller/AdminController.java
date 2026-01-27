@@ -216,7 +216,7 @@ public class AdminController {
         LocalDateTime punchOut = body.get("punchOut") != null
                 ? LocalDateTime.parse(body.get("punchOut").toString()) : null;
 
-        String message = attendanceService.addAttendance(employeeUsername, Optional.ofNullable(punchIn) , Optional.ofNullable(punchOut), comment, adminUsername);
+        String message = attendanceService.addAttendance(employeeUsername, Optional.ofNullable(punchIn) , Optional.ofNullable(punchOut), comment, adminUsername).toString();
         return Map.of("message", message);
     }
 

@@ -37,12 +37,24 @@ public class AttendanceService {
     }
 
 
-    public String addAttendance(String employeeUseraname, Optional<LocalDateTime> punchIn , Optional<LocalDateTime> punchOut, String comment, String adminUsername) {
+    public Map<String,Object> addAttendance(String employeeUseraname, Optional<LocalDateTime> punchIn , Optional<LocalDateTime> punchOut, String comment, String adminUsername) {
 
         User admin = userRepository.findByUsername(adminUsername).orElseThrow(() -> new UsernameNotFoundException("Admin not found"));
 
         User employee = userRepository.findByUsername(employeeUseraname).orElseThrow(() -> new UsernameNotFoundException("Employee not found"));
 
+
+        LocalDate date = punchIn
+                .map(LocalDateTime::toLocalDate)
+                .orElseGet(() ->
+                        punchOut.map(LocalDateTime::toLocalDate)
+                                .orElse(LocalDate.now())
+                );
+
+
+        if (attendanceRepository.existsByEmployeeAndDate(employee, date)) {
+            throw new RuntimeException("Attendance already exists for this date");
+        }
 
 
         Attendance attendance = new Attendance();
@@ -51,20 +63,40 @@ public class AttendanceService {
         attendance.setPunchIn(punchIn.orElse(null));
         attendance.setPunchOut(punchOut.orElse(null));
         attendance.setComment(comment);
-        LocalDate date = punchIn
-                .map(LocalDateTime::toLocalDate)
-                .orElseGet(() ->
-                        punchOut.map(LocalDateTime::toLocalDate)
-                                .orElse(LocalDate.now()) // fallback
-                );
+        attendance.setDate(date);
 
-        attendance.setDate(date);;
+
+        double totalWorkingHours = 0.0;
+        double overTime = 0.0;
+
+        if (punchIn.isPresent() && punchOut.isPresent()) {
+
+            long minutesWorked = java.time.Duration
+                    .between(punchIn.get(), punchOut.get())
+                    .toMinutes();
+
+            totalWorkingHours = minutesWorked / 60.0;
+
+            double threshold = FIXED_OFFICE_HOURS + GRACE_HOURS;
+            if (totalWorkingHours > threshold) {
+                overTime = totalWorkingHours - threshold;
+            }
+        }
+
+        attendance.setTotalWorkingHours(round(totalWorkingHours));
+        attendance.setOverTime(round(overTime));
 
         attendanceRepository.save(attendance);
 
 
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Attendance added successfully");
+        response.put("employee", employeeUseraname);
+        response.put("date", date);
+        response.put("totalWorkingHours", round(totalWorkingHours));
+        response.put("overTime", round(overTime));
 
-        return "Attendance added successfully of Employee " + employeeUseraname;
+        return response;
     }
 
 
@@ -116,35 +148,19 @@ public class AttendanceService {
                 .map(a -> {
                     Map<String, Object> map = new HashMap<>();
 
-                    // Extract only the day from LocalDate
-                    int day = a.getDate().getDayOfMonth();
-                    map.put("day", day);
-
-                    // Show only TIME from punchIn & punchOut
-                    map.put("punchIn", a.getPunchIn() != null ? a.getPunchIn().format(timeFormatter) : null);
-                    map.put("punchOut", a.getPunchOut() != null ? a.getPunchOut().format(timeFormatter) : null);
+                    map.put("day", a.getDate().getDayOfMonth());
+                    map.put("punchIn", a.getPunchIn() != null
+                            ? a.getPunchIn().format(timeFormatter)
+                            : null);
+                    map.put("punchOut", a.getPunchOut() != null
+                            ? a.getPunchOut().format(timeFormatter)
+                            : null);
                     map.put("comment", a.getComment());
 
+                    // ✅ Stored values from DB
+                    map.put("totalWorkingHours", a.getTotalWorkingHours());
+                    map.put("overTime", a.getOverTime());
 
-                    double totalOfficeHour = 0.0;
-                    double overTime = 0.0;
-
-                    if (a.getPunchIn() != null && a.getPunchOut() != null) {
-
-                        long minutesWorked = java.time.Duration
-                                .between(a.getPunchIn(), a.getPunchOut())
-                                .toMinutes();
-
-                        totalOfficeHour = minutesWorked / 60.0;
-
-                        double threshold = FIXED_OFFICE_HOURS + GRACE_HOURS;
-                        if (totalOfficeHour > threshold) {
-                            overTime = totalOfficeHour - threshold;
-                        }
-                    }
-
-                    map.put("totalOfficeHour", round(totalOfficeHour));
-                    map.put("overTime", round(overTime));
 
 
                     return map;
