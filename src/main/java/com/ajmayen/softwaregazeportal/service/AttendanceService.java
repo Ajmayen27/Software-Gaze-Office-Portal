@@ -14,9 +14,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.round;
+
 
 @Service
 public class AttendanceService {
+
+    private static final double FIXED_OFFICE_HOURS = 8.0;
+    private static final double GRACE_HOURS = 1.0;
+
+    private double round(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
+
 
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;
@@ -114,6 +124,28 @@ public class AttendanceService {
                     map.put("punchIn", a.getPunchIn() != null ? a.getPunchIn().format(timeFormatter) : null);
                     map.put("punchOut", a.getPunchOut() != null ? a.getPunchOut().format(timeFormatter) : null);
                     map.put("comment", a.getComment());
+
+
+                    double totalOfficeHour = 0.0;
+                    double overTime = 0.0;
+
+                    if (a.getPunchIn() != null && a.getPunchOut() != null) {
+
+                        long minutesWorked = java.time.Duration
+                                .between(a.getPunchIn(), a.getPunchOut())
+                                .toMinutes();
+
+                        totalOfficeHour = minutesWorked / 60.0;
+
+                        double threshold = FIXED_OFFICE_HOURS + GRACE_HOURS;
+                        if (totalOfficeHour > threshold) {
+                            overTime = totalOfficeHour - threshold;
+                        }
+                    }
+
+                    map.put("totalOfficeHour", round(totalOfficeHour));
+                    map.put("overTime", round(overTime));
+
 
                     return map;
                 })

@@ -43,10 +43,10 @@ public class Attendance {
 
     private String comment;
 
-
+    @Column(name = "total_working_hour")
     private double TotalWorkingHours;
 
-
+    @Column(name="over_time")
     private double OverTime;
 
 
