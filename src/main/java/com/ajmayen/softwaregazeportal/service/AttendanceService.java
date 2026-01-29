@@ -7,6 +7,7 @@ import com.ajmayen.softwaregazeportal.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -23,9 +24,14 @@ public class AttendanceService {
     private static final double FIXED_OFFICE_HOURS = 8.0;
     private static final double GRACE_HOURS = 1.0;
 
-    private double round(double value) {
-        return Math.round(value * 100.0) / 100.0;
+    private String formatMinutes(long minutes) {
+
+        long hh = minutes / 60;
+        long mm = minutes % 60;
+
+        return String.format("%02d:%02d", hh, mm);
     }
+
 
 
     private final AttendanceRepository attendanceRepository;
@@ -37,12 +43,19 @@ public class AttendanceService {
     }
 
 
-    public Map<String,Object> addAttendance(String employeeUseraname, Optional<LocalDateTime> punchIn , Optional<LocalDateTime> punchOut, String comment, String adminUsername) {
+    public Map<String, Object> addAttendance(
+            String employeeUsername,
+            Optional<LocalDateTime> punchIn,
+            Optional<LocalDateTime> punchOut,
+            String comment,
+            String adminUsername
+    ) {
 
-        User admin = userRepository.findByUsername(adminUsername).orElseThrow(() -> new UsernameNotFoundException("Admin not found"));
+        User admin = userRepository.findByUsername(adminUsername)
+                .orElseThrow(() -> new UsernameNotFoundException("Admin not found"));
 
-        User employee = userRepository.findByUsername(employeeUseraname).orElseThrow(() -> new UsernameNotFoundException("Employee not found"));
-
+        User employee = userRepository.findByUsername(employeeUsername)
+                .orElseThrow(() -> new UsernameNotFoundException("Employee not found"));
 
         LocalDate date = punchIn
                 .map(LocalDateTime::toLocalDate)
@@ -51,11 +64,9 @@ public class AttendanceService {
                                 .orElse(LocalDate.now())
                 );
 
-
         if (attendanceRepository.existsByEmployeeAndDate(employee, date)) {
             throw new RuntimeException("Attendance already exists for this date");
         }
-
 
         Attendance attendance = new Attendance();
         attendance.setEmployee(employee);
@@ -65,39 +76,47 @@ public class AttendanceService {
         attendance.setComment(comment);
         attendance.setDate(date);
 
-
-        double totalWorkingHours = 0.0;
-        double overTime = 0.0;
+        // ✅ Minutes Calculation
+        long totalMinutesWorked = 0;
+        long overtimeMinutes = 0;
 
         if (punchIn.isPresent() && punchOut.isPresent()) {
 
-            long minutesWorked = java.time.Duration
+            totalMinutesWorked = Duration
                     .between(punchIn.get(), punchOut.get())
                     .toMinutes();
 
-            totalWorkingHours = minutesWorked / 60.0;
+            // Fixed office = 8 hours = 480 min
+            long fixedOfficeMinutes = 8 * 60;
 
-            double threshold = FIXED_OFFICE_HOURS + GRACE_HOURS;
-            if (totalWorkingHours > threshold) {
-                overTime = totalWorkingHours - threshold;
+            // Grace = 1 hour = 60 min
+            long graceMinutes = 1 * 60;
+
+            long threshold = fixedOfficeMinutes + graceMinutes;
+
+            if (totalMinutesWorked > threshold) {
+                overtimeMinutes = totalMinutesWorked - threshold;
             }
         }
 
-        attendance.setTotalWorkingHours(round(totalWorkingHours));
-        attendance.setOverTime(round(overTime));
+        // ✅ Store in DB
+        attendance.setTotalWorkingMinutes(totalMinutesWorked);
+        attendance.setOverTimeMinutes(overtimeMinutes);
 
         attendanceRepository.save(attendance);
 
-
+        // ✅ Response in HH:mm format
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Attendance added successfully");
-        response.put("employee", employeeUseraname);
+        response.put("employee", employeeUsername);
         response.put("date", date);
-        response.put("totalWorkingHours", round(totalWorkingHours));
-        response.put("overTime", round(overTime));
+
+        response.put("totalWorkingHours", formatMinutes(totalMinutesWorked));
+        response.put("overTime", formatMinutes(overtimeMinutes));
 
         return response;
     }
+
 
 
     public List<Map<String, Object>> getAttendanceSummaryAll(int month, int year) {
@@ -136,32 +155,34 @@ public class AttendanceService {
         LocalDateTime start = ym.atDay(1).atStartOfDay();
         LocalDateTime end = ym.atEndOfMonth().atTime(23, 59);
 
-
-
-
-        List<Attendance> attendances = attendanceRepository
-                .findAllByEmployeeAndPunchInBetween(employee, start, end);
+        List<Attendance> attendances =
+                attendanceRepository.findAllByEmployeeAndPunchInBetween(employee, start, end);
 
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
         List<Map<String, Object>> attendanceList = attendances.stream()
                 .map(a -> {
+
                     Map<String, Object> map = new HashMap<>();
 
                     map.put("day", a.getDate().getDayOfMonth());
+
                     map.put("punchIn", a.getPunchIn() != null
                             ? a.getPunchIn().format(timeFormatter)
                             : null);
+
                     map.put("punchOut", a.getPunchOut() != null
                             ? a.getPunchOut().format(timeFormatter)
                             : null);
+
                     map.put("comment", a.getComment());
 
-                    // ✅ Stored values from DB
-                    map.put("totalWorkingHours", a.getTotalWorkingHours());
-                    map.put("overTime", a.getOverTime());
+                    // ✅ Correct Output
+                    map.put("totalWorkingHours",
+                            formatMinutes(a.getTotalWorkingMinutes()));
 
-
+                    map.put("overTime",
+                            formatMinutes(a.getOverTimeMinutes()));
 
                     return map;
                 })
@@ -175,10 +196,6 @@ public class AttendanceService {
 
         return result;
     }
-
-
-
-
 
 
 
