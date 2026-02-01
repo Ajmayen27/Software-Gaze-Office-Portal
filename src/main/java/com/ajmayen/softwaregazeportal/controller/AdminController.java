@@ -4,6 +4,7 @@ package com.ajmayen.softwaregazeportal.controller;
 
 import com.ajmayen.softwaregazeportal.model.Expense;
 import com.ajmayen.softwaregazeportal.model.User;
+import com.ajmayen.softwaregazeportal.repository.AttendanceRepository;
 import com.ajmayen.softwaregazeportal.repository.ExpenseRepository;
 import com.ajmayen.softwaregazeportal.repository.UserRepository;
 import com.ajmayen.softwaregazeportal.service.AttendanceService;
@@ -25,6 +26,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,12 +54,15 @@ public class AdminController {
 
     private final PdfReportService pdfReportService;
 
-    public AdminController(UserRepository userRepository, ExpenseRepository expenseRepository, MyUserDetailsService myUserDetailsService, AttendanceService attendanceService, PdfReportService pdfReportService) {
+    private final AttendanceRepository attendanceRepository;
+
+    public AdminController(UserRepository userRepository, ExpenseRepository expenseRepository, MyUserDetailsService myUserDetailsService, AttendanceService attendanceService, PdfReportService pdfReportService, AttendanceRepository attendanceRepository) {
         this.userRepository = userRepository;
         this.expenseRepository = expenseRepository;
         this.myUserDetailsService = myUserDetailsService;
         this.attendanceService = attendanceService;
         this.pdfReportService = pdfReportService;
+        this.attendanceRepository = attendanceRepository;
     }
 
 
@@ -221,7 +226,17 @@ public class AdminController {
     }
 
 
+    @DeleteMapping("/attendance/delete")
+    public ResponseEntity<Map<String,Object>> deleteAttendance(
+            @RequestParam String username,
+            @RequestParam int year,
+            @RequestParam int month,
+            @RequestParam int day
+    ){
 
+         Map<String,Object> result = attendanceService.deleteAttendance(username,year,month,day);
+         return ResponseEntity.ok(result);
+    }
 
 
 
@@ -237,6 +252,8 @@ public class AdminController {
                                                     @RequestParam int year) {
         return attendanceService.getIndividualAttendance(username, month, year);
     }
+
+
 
 
 

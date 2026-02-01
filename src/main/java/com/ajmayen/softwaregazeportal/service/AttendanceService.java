@@ -21,8 +21,6 @@ import static java.lang.Math.round;
 @Service
 public class AttendanceService {
 
-    private static final double FIXED_OFFICE_HOURS = 8.0;
-    private static final double GRACE_HOURS = 1.0;
 
     private String formatMinutes(long minutes) {
 
@@ -31,7 +29,6 @@ public class AttendanceService {
 
         return String.format("%02d:%02d", hh, mm);
     }
-
 
 
     private final AttendanceRepository attendanceRepository;
@@ -76,7 +73,7 @@ public class AttendanceService {
         attendance.setComment(comment);
         attendance.setDate(date);
 
-        // ✅ Minutes Calculation
+
         long totalMinutesWorked = 0;
         long overtimeMinutes = 0;
 
@@ -99,13 +96,12 @@ public class AttendanceService {
             }
         }
 
-        // ✅ Store in DB
         attendance.setTotalWorkingMinutes(totalMinutesWorked);
         attendance.setOverTimeMinutes(overtimeMinutes);
 
         attendanceRepository.save(attendance);
 
-        // ✅ Response in HH:mm format
+
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Attendance added successfully");
         response.put("employee", employeeUsername);
@@ -177,7 +173,7 @@ public class AttendanceService {
 
                     map.put("comment", a.getComment());
 
-                    // ✅ Correct Output
+
                     map.put("totalWorkingHours",
                             formatMinutes(a.getTotalWorkingMinutes()));
 
@@ -196,6 +192,43 @@ public class AttendanceService {
 
         return result;
     }
+
+
+    public Map<String, Object> deleteAttendance(
+            String employeeUsername,
+            int year,
+            int month,
+            int day
+    ) {
+
+        // ✅ Find Employee
+        User employee = userRepository.findByUsername(employeeUsername)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        // ✅ Build Date
+        LocalDate date = LocalDate.of(year, month, day);
+
+        // ✅ Check Attendance Exists
+        Attendance attendance = attendanceRepository.findByEmployeeAndDate(employee, date)
+                .orElseThrow(() -> new RuntimeException(
+                        "Attendance not found for this date: " + date
+                ));
+
+        // ✅ Delete Attendance
+        attendanceRepository.delete(attendance);
+
+        // ✅ Response
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Attendance deleted successfully");
+        response.put("employee", employeeUsername);
+        response.put("deletedDate", date);
+
+        return response;
+    }
+
+
+
+
 
 
 
