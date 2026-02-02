@@ -1,8 +1,10 @@
 package com.ajmayen.softwaregazeportal.service;
 
 import com.ajmayen.softwaregazeportal.model.Attendance;
+import com.ajmayen.softwaregazeportal.model.GracePeriodSetting;
 import com.ajmayen.softwaregazeportal.model.User;
 import com.ajmayen.softwaregazeportal.repository.AttendanceRepository;
+import com.ajmayen.softwaregazeportal.repository.GracePeriodRepository;
 import com.ajmayen.softwaregazeportal.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -33,11 +35,55 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;
+    private final GracePeriodRepository gracePeriodRepository;
 
-    public AttendanceService(AttendanceRepository attendanceRepository, UserRepository userRepository) {
+
+    public AttendanceService(AttendanceRepository attendanceRepository, UserRepository userRepository, GracePeriodRepository gracePeriodRepository) {
         this.attendanceRepository = attendanceRepository;
         this.userRepository = userRepository;
+
+        this.gracePeriodRepository = gracePeriodRepository;
     }
+
+    public long getCurrentGraceMinutes() {
+
+        GracePeriodSetting latest =
+                gracePeriodRepository.findTopByOrderByUpdatedAtDesc();
+
+        // Default Grace = 60 minutes if not set yet
+        if (latest == null) {
+            return 60;
+        }
+
+        // Convert hours → minutes
+        return (long) (latest.getGraceHours() * 60);
+    }
+
+    public Map<String, Object> updateGracePeriod(double newGraceHours) {
+
+        if (newGraceHours < 0) {
+            throw new IllegalArgumentException("Grace period cannot be negative");
+        }
+
+        GracePeriodSetting setting = new GracePeriodSetting();
+        setting.setGraceHours(newGraceHours);
+        setting.setUpdatedAt(LocalDateTime.now());
+
+        gracePeriodRepository.save(setting);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Grace period updated successfully");
+        response.put("newGraceHours", newGraceHours);
+        response.put("updatedAt", setting.getUpdatedAt());
+
+        return response;
+    }
+
+
+
+
+
+
 
 
     public Map<String, Object> addAttendance(
@@ -87,7 +133,8 @@ public class AttendanceService {
             long fixedOfficeMinutes = 8 * 60;
 
             // Grace = 1 hour = 60 min
-            long graceMinutes = 1 * 60;
+            //long graceMinutes = 1 * 60;
+            long graceMinutes = getCurrentGraceMinutes();
 
             long threshold = fixedOfficeMinutes + graceMinutes;
 
@@ -201,23 +248,22 @@ public class AttendanceService {
             int day
     ) {
 
-        // ✅ Find Employee
         User employee = userRepository.findByUsername(employeeUsername)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-        // ✅ Build Date
+
         LocalDate date = LocalDate.of(year, month, day);
 
-        // ✅ Check Attendance Exists
+
         Attendance attendance = attendanceRepository.findByEmployeeAndDate(employee, date)
                 .orElseThrow(() -> new RuntimeException(
                         "Attendance not found for this date: " + date
                 ));
 
-        // ✅ Delete Attendance
+
         attendanceRepository.delete(attendance);
 
-        // ✅ Response
+
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Attendance deleted successfully");
         response.put("employee", employeeUsername);
@@ -225,10 +271,6 @@ public class AttendanceService {
 
         return response;
     }
-
-
-
-
 
 
 

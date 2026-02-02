@@ -255,6 +255,19 @@ public class AdminController {
 
 
 
+    @PutMapping("/attendance/grace-period")
+    public ResponseEntity<Map<String, Object>> updateGrace(
+            @RequestParam double graceHours
+    ) {
+        return ResponseEntity.ok(attendanceService.updateGracePeriod(graceHours));
+    }
+
+
+
+
+
+
+
 
 
 }
