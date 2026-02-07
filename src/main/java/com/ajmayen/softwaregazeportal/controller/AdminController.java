@@ -262,12 +262,10 @@ public class AdminController {
         return ResponseEntity.ok(attendanceService.updateGracePeriod(graceHours));
     }
 
+    @GetMapping("/grace-period/latest")
+    public ResponseEntity<Map<String, Object>> getLatestGracePeriod() {
 
-
-
-
-
-
-
+        return ResponseEntity.ok(attendanceService.getLatestGracePeriod());
+    }
 
 }

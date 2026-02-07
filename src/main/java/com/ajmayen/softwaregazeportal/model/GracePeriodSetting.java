@@ -22,6 +22,4 @@ public class GracePeriodSetting {
     private LocalDateTime updatedAt;
 
 
-
-
 }

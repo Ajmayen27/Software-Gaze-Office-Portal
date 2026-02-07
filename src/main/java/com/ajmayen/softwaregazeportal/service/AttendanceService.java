@@ -48,7 +48,10 @@ public class AttendanceService {
     public long getCurrentGraceMinutes() {
 
         GracePeriodSetting latest =
-                gracePeriodRepository.findTopByOrderByUpdatedAtDesc();
+                gracePeriodRepository
+                        .findTopByOrderByUpdatedAtDesc()
+                        .orElseThrow(()-> new UsernameNotFoundException("GracePeriod Not Found"));
+
 
         // Default Grace = 60 minutes if not set yet
         if (latest == null) {
@@ -239,6 +242,23 @@ public class AttendanceService {
 
         return result;
     }
+
+
+    public Map<String, Object> getLatestGracePeriod() {
+
+        GracePeriodSetting setting = gracePeriodRepository
+                .findTopByOrderByUpdatedAtDesc()
+                .orElseThrow(() -> new RuntimeException("Grace period not set yet"));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("graceHours", setting.getGraceHours());
+        response.put("updatedAt", setting.getUpdatedAt());
+
+        return response;
+    }
+
+
+
 
 
     public Map<String, Object> deleteAttendance(
