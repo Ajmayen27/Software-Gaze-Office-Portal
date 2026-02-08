@@ -25,6 +25,7 @@ spring:
 frontend:
   url: ${FRONTEND_URL}
 
+SECRET_KEY: ${SECRET_KEY}
 
 
 #  h2:
