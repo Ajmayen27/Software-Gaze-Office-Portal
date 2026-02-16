@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(
         origins = {
                 "http://localhost:5173",
-                "https://loquacious-medovik-3d0a45.netlify.app"
+                "https://softwaregazeportal.netlify.app"
         },
         allowCredentials = "true"
 )
